@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>五代十国 · 乱世星图｜知识图谱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+<style>
+:root{
+  --bg:#05070f; --card:rgba(13,17,31,.78); --line:rgba(130,150,255,.16);
+  --txt:#e9edff; --dim:#8d95b9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",sans-serif;-webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;display:block;cursor:grab;touch-action:none}
+#c.grabbing{cursor:grabbing}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 52%,rgba(2,4,10,.6) 100%)}
+
+/* ===== 标题 ===== */
+.brand{position:fixed;top:20px;left:24px;pointer-events:none;z-index:5}
+.brand h1{font-family:"Kaiti SC","STKaiti","KaiTi","Noto Serif SC",serif;font-size:34px;font-weight:700;letter-spacing:2px;background:linear-gradient(92deg,#ff5d73 0%,#f472b6 30%,#a78bfa 65%,#2dd4bf 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(167,139,250,.35))}
+.brand h1 small{font-size:16px;letter-spacing:5px;background:none;-webkit-text-fill-color:#cbd5ff;filter:none}
+.brand p{margin-top:6px;font-size:12.5px;color:var(--dim);letter-spacing:1.5px}
+
+/* ===== 图例 ===== */
+.legend{position:fixed;top:96px;left:24px;display:flex;flex-wrap:wrap;gap:8px;z-index:5;max-width:62vw}
+.lg{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--txt);font-size:12.5px;cursor:pointer;transition:.25s;user-select:none;font-family:inherit}
+.lg:hover{border-color:rgba(140,160,255,.45);transform:translateY(-1px)}
+.lg .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px var(--c)}
+.lg.off{opacity:.32;filter:grayscale(.8)}
+.lg .cnt{color:var(--dim);font-size:11px}
+
+/* ===== 搜索 ===== */
+.search{position:fixed;top:20px;right:24px;z-index:6;width:250px}
+.search input{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--txt);font-size:13.5px;outline:none;transition:.25s;font-family:inherit}
+.search input:focus{border-color:rgba(45,212,191,.6);box-shadow:0 0 0 3px rgba(45,212,191,.12),0 0 22px rgba(45,212,191,.15)}
+.search input::placeholder{color:#5c6485}
+.search .list{position:absolute;top:calc(100% + 8px);left:0;right:0;border-radius:12px;background:rgba(10,13,25,.95);border:1px solid var(--line);overflow:hidden;max-height:280px;overflow-y:auto;display:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:9}
+.search .list.show{display:block}
+.sitem{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:13px}
+.sitem:hover{background:rgba(120,140,255,.12)}
+.sitem .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.sitem .sy{color:var(--dim);font-size:11px;margin-left:auto}
+
+/* ===== 视图按钮 ===== */
+.viewbtns{position:fixed;right:24px;top:86px;display:flex;flex-direction:column;gap:8px;z-index:6}
+.vb{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.25s;font-family:inherit}
+.vb:hover{border-color:rgba(140,160,255,.5);box-shadow:0 0 16px rgba(120,140,255,.25)}
+#fitBtn{font-size:11.5px;width:auto;padding:0 12px;letter-spacing:1px}
+
+/* ===== 名言轮播 ===== */
+.quote{position:fixed;top:24px;left:50%;transform:translateX(-50%);max-width:44vw;text-align:center;pointer-events:none;z-index:5;opacity:0;transition:opacity .9s}
+.quote.show{opacity:1}
+.quote .q{font-family:"Kaiti SC","STKaiti","KaiTi",serif;font-size:15.5px;letter-spacing:1px;color:#cfd8ff;text-shadow:0 0 18px rgba(140,160,255,.4)}
+.quote .a{font-size:11px;color:var(--dim);margin-top:5px;letter-spacing:2px}
+
+/* ===== 详情面板 ===== */
+.panel{position:fixed;top:86px;right:24px;bottom:148px;width:332px;z-index:7;background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateX(calc(100% + 40px));transition:transform .45s cubic-bezier(.22,1.2,.36,1);padding:22px;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.panel.open{transform:none}
+.panel::before{content:'';position:absolute;top:0;left:18px;right:18px;height:2px;border-radius:2px;background:linear-gradient(90deg,#ff5d73,#a78bfa,#2dd4bf);opacity:.8}
+.panel::-webkit-scrollbar{width:5px}
+.panel::-webkit-scrollbar-thumb{background:rgba(130,150,255,.25);border-radius:4px}
+.pclose{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:13px}
+.pclose:hover{color:#fff;border-color:rgba(140,160,255,.5)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:4px 11px;border-radius:999px;font-size:11.5px;border:1px solid var(--line);color:var(--dim);background:rgba(255,255,255,.03)}
+.chip.cat{color:#fff;border-color:transparent;background:linear-gradient(120deg,var(--c),transparent 230%);box-shadow:0 0 14px -4px var(--c)}
+.pname{font-family:"Kaiti SC","STKaiti","KaiTi",serif;font-size:30px;letter-spacing:3px;margin-bottom:6px}
+.ptag{font-size:12.5px;color:#f9a8d4;letter-spacing:1px;margin-bottom:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px;margin-bottom:14px}
+.kv .k{color:var(--dim)}
+.kv .v{color:#dbe2ff}
+.pdesc{font-size:13px;line-height:1.85;color:#c9d2f2;margin-bottom:14px}
+.prel-title{font-size:11.5px;color:var(--dim);margin-bottom:8px;letter-spacing:2px}
+.prel{display:flex;flex-wrap:wrap;gap:7px}
+.prel .chip{border-color:rgba(167,139,250,.35);color:#d5ccff}
+
+/* ===== 时间轴 ===== */
+.timeline{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;width:min(660px,calc(100vw - 40px));z-index:8;background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:14px 20px 12px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.tl-top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+#playBtn{padding:7px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;color:#04101a;font-weight:600;background:linear-gradient(100deg,#2dd4bf,#22d3ee);box-shadow:0 0 18px rgba(45,212,191,.4);font-family:inherit;letter-spacing:1px}
+#playBtn:hover{filter:brightness(1.12)}
+#speedBtn{padding:7px 11px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:12px;font-family:inherit}
+#speedBtn:hover{color:#fff}
+#yearLabel{font-size:26px;font-weight:800;letter-spacing:1px;margin-left:4px;background:linear-gradient(90deg,#f472b6,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;min-width:64px}
+.tl-era{margin-left:auto;font-size:11px;color:var(--dim);letter-spacing:2px}
+#yearSlider{width:100%;appearance:none;-webkit-appearance:none;height:4px;border-radius:4px;background:linear-gradient(90deg,#ff5d73,#f472b6,#a78bfa,#2dd4bf);outline:none;cursor:pointer}
+#yearSlider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #a78bfa;box-shadow:0 0 12px rgba(167,139,250,.9);cursor:grab}
+#yearSlider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #a78bfa;box-shadow:0 0 12px rgba(167,139,250,.9);cursor:grab}
+
+/* ===== 提示与署名 ===== */
+.hint{position:fixed;left:24px;bottom:26px;z-index:5;font-size:12px;color:#6c7497;letter-spacing:1px;pointer-events:none;animation:hintfade 1s 15s forwards}
+@keyframes hintfade{to{opacity:0}}
+.credit{position:fixed;right:24px;bottom:26px;z-index:5;font-size:11px;color:#4d5475;pointer-events:none;letter-spacing:1px}
+
+@media (max-width:700px){
+  .brand h1{font-size:25px}
+  .legend{top:84px;left:12px}
+  .search{width:168px;right:12px;top:14px}
+  .quote{display:none}
+  .viewbtns{top:78px;right:12px}
+  .panel{top:auto;left:10px;right:10px;bottom:118px;width:auto;transform:translateY(calc(100% + 30px));max-height:52vh}
+  .panel.open{transform:none}
+  .hint,.credit{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+
+<div class="brand">
+  <h1>五代十国<small>· 乱世星图</small></h1>
+  <p>907 — 979 · 你方唱罢我登场 · 一部乱世生存指南</p>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="search">
+  <input id="searchInput" placeholder="搜索 人物 / 政权 / 事件…" autocomplete="off">
+  <div class="list" id="searchList"></div>
+</div>
+
+<div class="viewbtns">
+  <button class="vb" id="zoomIn" title="放大">＋</button>
+  <button class="vb" id="zoomOut" title="缩小">－</button>
+  <button class="vb" id="fitBtn" title="回到全景">⤢ 全景</button>
+</div>
+
+<div class="quote" id="quote">
+  <div class="q" id="quoteText"></div>
+  <div class="a" id="quoteBy"></div>
+</div>
+
+<div class="panel" id="panel">
+  <button class="pclose" id="panelClose">✕</button>
+  <div id="panelBody"></div>
+</div>
+
+<div class="timeline">
+  <div class="tl-top">
+    <button id="playBtn">▶ 播放</button>
+    <button id="speedBtn">1×</button>
+    <span id="yearLabel">907</span>
+    <span class="tl-era">乱世纪元 · 878 — 980</span>
+  </div>
+  <input type="range" id="yearSlider" min="878" max="980" step="1" value="907">
+</div>
+
+<div class="hint">拖拽节点 · 滚轮缩放 · 点击查看详情 · 拖动时间轴看乱世兴亡</div>
+<div class="credit">五代十国 · 乱世星图 | 据《新五代史》《旧五代史》《资治通鉴》整理 · 仅供学习</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ==================== 工具 ==================== */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => v<a?a:v>b?b:v;
+const lerp = (a,b,t) => a+(b-a)*t;
+const mod = (v,m) => ((v%m)+m)%m;
+const hash = n => { const x = Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); };
+const rgbCache = {};
+function rgba(hex,a){
+  let c = rgbCache[hex];
+  if(!c){ const n = parseInt(hex.slice(1),16); c = [n>>16&255, n>>8&255, n&255]; rgbCache[hex]=c; }
+  return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
+}
+
+/* ==================== 画布 ==================== */
+const canvas = $('#c');
+const ctx = canvas.getContext('2d');
+let W=0, H=0, DPR=1;
+let stars = [];
+function makeStars(){
+  stars = [];
+  for(let i=0;i<150;i++){
+    stars.push({ x:Math.random()*W, y:Math.random()*H, r:0.6+Math.random()*1.3, ph:Math.random()*6.28, sp:0.0005+Math.random()*0.0015 });
+  }
+}
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  makeStars();
+}
+window.addEventListener('resize', resize);
+resize();
+
+/*DATA-BEGIN*/
+/* ==================== 数据 ==================== */
+const CAT = {
+  wudai:   { name:'五代', color:'#ff5d73', r:25 },
+  shiguo:  { name:'十国', color:'#2dd4bf', r:21 },
+  waibu:   { name:'辽·宋', color:'#fbbf24', r:21 },
+  renwu:   { name:'人物', color:'#a78bfa', r:13 },
+  shijian: { name:'事件', color:'#f472b6', r:11 }
+};
+
+const NODES = [
+  /* — 五代 — */
+  {id:'hliang', n:'后梁', c:'wudai', s:907, e:923, hx:0, hy:0, yrs:'907–923年', founder:'朱温', city:'开封', role:'五代 · 第一王朝', d:'朱温废唐哀帝自立，五代乱世正式开张，中原政权走马灯的第一棒。', t:'#乱世开张'},
+  {id:'htang', n:'后唐', c:'wudai', s:923, e:936, hx:-120, hy:25, yrs:'923–936年', founder:'李存勖', city:'洛阳', role:'五代 · 第二王朝', d:'李存勖灭后梁称帝，自居大唐正统，一度是五代最强政权。', t:'#大唐复刻版'},
+  {id:'hjin', n:'后晋', c:'wudai', s:936, e:947, hx:60, hy:20, yrs:'936–947年', founder:'石敬瑭', city:'开封', role:'五代 · 第三王朝', d:'靠契丹支持上位，割让燕云十六州，国格尽失。', t:'#儿皇帝王朝'},
+  {id:'hhan', n:'后汉', c:'wudai', s:947, e:951, hx:110, hy:-30, yrs:'947–951年', founder:'刘知远', city:'开封', role:'五代 · 第四王朝', d:'五代最短命王朝，仅仅四年便亡。', t:'#四年体验卡'},
+  {id:'hzhou', n:'后周', c:'wudai', s:951, e:960, hx:150, hy:15, yrs:'951–960年', founder:'郭威', city:'开封', role:'五代 · 第五王朝', d:'五代最有为的王朝，柴荣改革图强，为北宋统一奠基。', t:'#乱世清流'},
+  /* — 十国 — */
+  {id:'qianshu', n:'前蜀', c:'shiguo', s:907, e:925, hx:-460, hy:70, yrs:'907–925年', founder:'王建', city:'成都', role:'十国 · 四川', d:'王建割据四川，天府之国歌舞升平。', t:'#天府之国'},
+  {id:'houshu', n:'后蜀', c:'shiguo', s:934, e:965, hx:-420, hy:120, yrs:'934–965年', founder:'孟知祥', city:'成都', role:'十国 · 四川', d:'孟知祥再造蜀国，蜀锦、花蕊夫人与《花间集》闻名。', t:'#蜀锦出圈'},
+  {id:'yangwu', n:'南吴', c:'shiguo', s:902, e:937, hx:270, hy:150, yrs:'902–937年', founder:'杨行密', city:'扬州', role:'十国 · 江淮', d:'割据江淮，后被权臣徐温的养子李昪取代。', t:'#江淮霸业'},
+  {id:'nantang', n:'南唐', c:'shiguo', s:937, e:975, hx:205, hy:105, yrs:'937–975年', founder:'李昪', city:'金陵', role:'十国 · 江东', d:'十国中最强盛、最有文化的一个，词人辈出。', t:'#文化天花板'},
+  {id:'wuyue', n:'吴越', c:'shiguo', s:907, e:978, hx:205, hy:230, yrs:'907–978年', founder:'钱镠', city:'杭州', role:'十国 · 两浙', d:'钱镠治水兴农，最终纳土归宋，乱世善终典范。', t:'#钱王射潮'},
+  {id:'min', n:'闽', c:'shiguo', s:909, e:945, hx:0, hy:310, yrs:'909–945年', founder:'王审知', city:'福州', role:'十国 · 福建', d:'开发福建、海上贸易兴起，后被南唐所灭。', t:'#海丝起点'},
+  {id:'chu', n:'马楚', c:'shiguo', s:907, e:951, hx:-175, hy:260, yrs:'907–951年', founder:'马殷', city:'长沙', role:'十国 · 湖南', d:'以茶立国，茶马贸易富甲一方，后被南唐所灭。', t:'#茶叶帝国'},
+  {id:'nanhan', n:'南汉', c:'shiguo', s:917, e:971, hx:-330, hy:340, yrs:'917–971年', founder:'刘䶮', city:'广州', role:'十国 · 岭南', d:'岭南割据，珍珠与南海贸易的富户。', t:'#岭南富户'},
+  {id:'jingnan', n:'荆南', c:'shiguo', s:924, e:963, hx:-195, hy:130, yrs:'924–963年', founder:'高季兴', city:'江陵', role:'十国 · 荆楚', d:'十国最迷你，四战之地全靠外交纵横存活。', t:'#小国生存学'},
+  {id:'beihan', n:'北汉', c:'shiguo', s:951, e:979, hx:-45, hy:-130, yrs:'951–979年', founder:'刘旻', city:'太原', role:'十国 · 河东', d:'后汉残部，靠辽国庇护，是十国中最后一个灭亡的。', t:'#十国守门员'},
+  /* — 外部政权 — */
+  {id:'liao', n:'辽(契丹)', c:'waibu', s:907, e:1125, hx:330, hy:-330, yrs:'907–1125年', founder:'耶律阿保机', city:'上京', role:'北境草原帝国', d:'北方草原帝国，燕云十六州的得主，深刻左右中原政局。', t:'#北境之王'},
+  {id:'song', n:'北宋', c:'waibu', s:960, e:1127, hx:200, hy:-12, yrs:'960–1127年', founder:'赵匡胤', city:'开封', role:'乱世终结者', d:'陈桥兵变立国，只用二十年便终结乱世（本图截取其统一期至979年）。', t:'#乱世终结者'},
+  /* — 人物 — */
+  {id:'zhuwen', n:'朱温', c:'renwu', s:852, e:912, hx:-15, hy:35, yrs:'852–912年', role:'后梁太祖', d:'从黄巢起义军到大梁开国皇帝，一手终结了289年的大唐。', t:'#黄巢旧部 · 大唐终结者'},
+  {id:'likeyong', n:'李克用', c:'renwu', s:856, e:908, hx:-60, hy:-110, yrs:'856–908年', role:'晋王 · 沙陀首领', d:'河东沙陀枭雄，与朱温死磕一生。临终留三矢之誓，让李存勖复仇。', t:'#十三太保'},
+  {id:'licunxu', n:'李存勖', c:'renwu', s:885, e:926, hx:-80, hy:-70, yrs:'885–926年', role:'后唐庄宗', d:'背负父亲三矢之誓，灭梁称帝；后期沉迷唱戏，身死国乱。', t:'#三矢之誓 · 五代第一猛男'},
+  {id:'shijingtang', n:'石敬瑭', c:'renwu', s:892, e:942, hx:65, hy:55, yrs:'892–942年', role:'后晋高祖', d:'割燕云十六州、向契丹称儿臣换取帝位，被后世吐槽一千年的“儿皇帝”。', t:'#儿皇帝'},
+  {id:'liuzhiyuan', n:'刘知远', c:'renwu', s:895, e:948, hx:105, hy:25, yrs:'895–948年', role:'后汉高祖', d:'后晋大将，趁契丹灭晋后北撤，入主中原建立后汉。', t:'#捡漏皇帝'},
+  {id:'guowei', n:'郭威', c:'renwu', s:904, e:954, hx:140, hy:55, yrs:'904–954年', role:'后周太祖', d:'兵变称帝（黄袍加身初代目），勤俭开明，为后周盛世奠基。', t:'#黄袍加身1.0'},
+  {id:'chairong', n:'柴荣', c:'renwu', s:921, e:959, hx:165, hy:45, yrs:'921–959年', role:'后周世宗', d:'高平之战一战立威，改革图强、北伐燕云，可惜英年早逝，只差一步统一天下。', t:'#五代第一明君'},
+  {id:'zhaokuangyin', n:'赵匡胤', c:'renwu', s:927, e:976, hx:185, hy:-55, yrs:'927–976年', role:'宋太祖', d:'陈桥兵变黄袍加身，杯酒释兵权收拢大权，二十年终结五代乱世。', t:'#黄袍加身2.0'},
+  {id:'wangjian', n:'王建', c:'renwu', s:847, e:918, hx:-470, hy:40, yrs:'847–918年', role:'前蜀高祖', d:'盐贩出身，乱世中割据四川称帝，蜀地歌舞升平。', t:'#盐贩逆袭'},
+  {id:'mengzhixiang', n:'孟知祥', c:'renwu', s:874, e:934, hx:-400, hy:155, yrs:'874–934年', role:'后蜀高祖', d:'后唐西川节度使，趁中原大乱自立为帝，再造蜀国。', t:'#川渝独立'},
+  {id:'yangxingmi', n:'杨行密', c:'renwu', s:852, e:905, hx:285, hy:165, yrs:'852–905年', role:'吴太祖', d:'草根起家，割据江淮，奠定南吴基业。', t:'#江淮柱石'},
+  {id:'libian', n:'李昪', c:'renwu', s:888, e:943, hx:240, hy:70, yrs:'888–943年', role:'南唐烈祖', d:'本名徐知诰，吴国权臣徐温的养子，代吴自立，南唐开国。', t:'#最强养子'},
+  {id:'liyu', n:'李煜', c:'renwu', s:937, e:978, hx:250, hy:135, yrs:'937–978年', role:'南唐后主', d:'被皇帝耽误的词人：“问君能有几多愁，恰似一江春水向东流。”', t:'#千古词帝'},
+  {id:'qianliu', n:'钱镠', c:'renwu', s:852, e:932, hx:240, hy:255, yrs:'852–932年', role:'吴越武肃王', d:'传说射潮筑塘，治理钱塘江，杭州成为人间天堂的第一功臣。', t:'#钱王射潮'},
+  {id:'wangshenzhi', n:'王审知', c:'renwu', s:862, e:925, hx:-30, hy:270, yrs:'862–925年', role:'闽太祖', d:'率众开发福建、兴学劝农，被后世尊为“开闽圣王”。', t:'#开闽圣王'},
+  {id:'mayin', n:'马殷', c:'renwu', s:852, e:930, hx:-200, hy:285, yrs:'852–930年', role:'楚武穆王', d:'木匠出身，以茶立国、茶马贸易富甲一方。', t:'#茶叶大佬'},
+  {id:'liuyan', n:'刘䶮', c:'renwu', s:889, e:942, hx:-360, hy:300, yrs:'889–942年', role:'南汉高祖', d:'原名刘岩，嫌重名太多自造“䶮”字，岭南称帝。', t:'#生造汉字'},
+  {id:'gaojixing', n:'高季兴', c:'renwu', s:858, e:929, hx:-220, hy:100, yrs:'858–929年', role:'荆南武信王', d:'十国最小的荆南之主，在强国夹缝中反复横跳的生存大师。', t:'#夹缝生存'},
+  {id:'liumin', n:'刘旻', c:'renwu', s:895, e:954, hx:-70, hy:-150, yrs:'895–954年', role:'北汉世祖', d:'刘知远之弟，后汉亡后据太原建北汉，依附契丹坚持到最后。', t:'#北汉钉子户'},
+  {id:'yelvabaoji', n:'耶律阿保机', c:'renwu', s:872, e:926, hx:380, hy:-370, yrs:'872–926年', role:'辽太祖', d:'统一契丹各部建立契丹国（辽），北方最强大的邻居。', t:'#草原CEO'},
+  {id:'yelvdeguang', n:'耶律德光', c:'renwu', s:902, e:947, hx:300, hy:-290, yrs:'902–947年', role:'辽太宗', d:'扶石敬瑭称帝拿走燕云十六州，后灭后晋入主中原，却水土不服匆匆北撤。', t:'#中原一日游'},
+  {id:'fengdao', n:'冯道', c:'renwu', s:882, e:954, hx:-40, hy:55, yrs:'882–954年', role:'五代不倒翁', d:'历仕四朝十帝而不倒的传奇宰相，乱世职场天花板。', t:'#最强打工人'},
+  /* — 事件 — */
+  {id:'huangchao', n:'黄巢起义', c:'shijian', s:878, e:980, hx:-140, hy:-60, yrs:'878年（875–884）', role:'唐末民变', d:'“满城尽带黄金甲”，敲响大唐丧钟，乱世由此拉开。', t:'#乱世序幕'},
+  {id:'cuantang', n:'朱温篡唐', c:'shijian', s:907, e:980, hx:-60, hy:20, yrs:'907年', role:'改朝换代', d:'朱温废唐哀帝自立，唐朝289年江山落幕，五代十国开始。', t:'#大唐终结'},
+  {id:'yanyun', n:'燕云十六州', c:'shijian', s:936, e:980, hx:60, hy:-190, yrs:'936年', role:'割地事件', d:'石敬瑭割燕云十六州给契丹，中原门户洞开，影响此后四百年。', t:'#史诗级割地'},
+  {id:'gaoping', n:'高平之战', c:'shijian', s:954, e:980, hx:-100, hy:-140, yrs:'954年', role:'关键战役', d:'柴荣亲征北汉与辽联军，以少胜多，一战立威坐稳帝位。', t:'#后周高光'},
+  {id:'chenqiao', n:'陈桥兵变', c:'shijian', s:960, e:980, hx:215, hy:10, yrs:'960年', role:'改朝换代', d:'赵匡胤在陈桥驿被部下“黄袍加身”，北宋建立，五代落幕。', t:'#黄袍加身'},
+  {id:'shibingquan', n:'杯酒释兵权', c:'shijian', s:961, e:980, hx:150, hy:65, yrs:'961年', role:'政治事件', d:'一场饭局收回开国将领兵权，奠定宋朝重文轻武的底色。', t:'#顶级饭局'},
+  {id:'nantangmie', n:'南唐灭亡', c:'shijian', s:975, e:980, hx:255, hy:95, yrs:'975年', role:'亡国事件', d:'宋军攻破金陵，李煜被俘北上，“最是仓皇辞庙日”。', t:'#词帝下线'},
+  {id:'beihanmie', n:'北汉灭亡', c:'shijian', s:979, e:980, hx:20, hy:-165, yrs:'979年', role:'乱世终结', d:'宋太宗亲征灭北汉，十国时代终结，五代十国正式落幕。', t:'#大结局'}
+];
+
+/* 关系：s 对 t 做了什么（方向：施动者 → 承受者） */
+const EDGES_RAW = [
+  /* 开国 */
+  ['zhuwen','hliang','建',907], ['licunxu','htang','建',923], ['shijingtang','hjin','建',936],
+  ['liuzhiyuan','hhan','建',947], ['guowei','hzhou','建',951], ['wangjian','qianshu','建',907],
+  ['mengzhixiang','houshu','建',934], ['yangxingmi','yangwu','建',902], ['libian','nantang','建',937],
+  ['qianliu','wuyue','建',907], ['wangshenzhi','min','建',909], ['mayin','chu','建',907],
+  ['liuyan','nanhan','建',917], ['gaojixing','jingnan','建',924], ['liumin','beihan','建',951],
+  ['yelvabaoji','liao','建',907], ['zhaokuangyin','song','建',960],
+  /* 朝代更替 */
+  ['htang','hliang','灭',923], ['hjin','htang','灭',936], ['hhan','hjin','代',947],
+  ['hzhou','hhan','代',951], ['song','hzhou','禅代',960], ['nantang','yangwu','禅代',937],
+  ['hhan','beihan','余脉',951],
+  /* 吞并与归附 */
+  ['htang','qianshu','灭',925], ['song','houshu','灭',965], ['nantang','min','灭',945],
+  ['nantang','chu','灭',951], ['song','nanhan','灭',971], ['song','nantang','灭',975],
+  ['song','jingnan','收',963], ['wuyue','song','纳土',978], ['song','beihan','灭',979],
+  ['liao','hjin','灭',947], ['liao','beihan','庇护',951],
+  /* 辽与燕云 */
+  ['yelvdeguang','shijingtang','扶立',936], ['shijingtang','yanyun','割让',936],
+  ['yanyun','liao','归辽',936], ['yelvdeguang','yanyun','南下',936],
+  /* 事件关联 */
+  ['zhuwen','huangchao','旧部',878], ['likeyong','huangchao','征讨',884],
+  ['zhuwen','cuantang','主谋',907], ['cuantang','hliang','开启',907],
+  ['chairong','gaoping','亲征',954], ['hzhou','gaoping','大捷',954],
+  ['gaoping','beihan','击退',954], ['gaoping','liao','击退',954],
+  ['zhaokuangyin','chenqiao','主角',960], ['chenqiao','song','立国',960], ['chenqiao','hzhou','取代',960],
+  ['zhaokuangyin','shibingquan','主导',961], ['shibingquan','song','奠基',961],
+  ['song','nantangmie','发起',975], ['nantangmie','nantang','终结',975], ['nantangmie','liyu','被俘',975],
+  ['song','beihanmie','发起',979], ['beihanmie','beihan','终结',979], ['beihanmie','liao','援失',979],
+  /* 人物关系 */
+  ['zhuwen','likeyong','死敌',884], ['likeyong','licunxu','三矢之誓',885],
+  ['yelvabaoji','yelvdeguang','父子',902], ['zhaokuangyin','chairong','君臣',954],
+  ['liumin','liuzhiyuan','兄弟',895], ['guowei','chairong','传位',954],
+  ['fengdao','htang','历仕',923], ['fengdao','hjin','历仕',936],
+  ['fengdao','hhan','历仕',947], ['fengdao','hzhou','历仕',951],
+  ['liyu','nantang','后主',961]
+];
+/*DATA-END*/
+
+/* ==================== 运行态初始化 ==================== */
+const nodeMap = {};
+NODES.forEach((n,i)=>{
+  nodeMap[n.id] = n;
+  n.x = n.hx; n.y = n.hy; n.vx = 0; n.vy = 0;
+  n.alpha = 0; n.target = 0; n.prevT = 0; n.deg = 0;
+  n.pulse = hash(i*1.7);
+});
+const EDGES = EDGES_RAW.map((r,i)=>{
+  const e = { s:nodeMap[r[0]], t:nodeMap[r[1]], k:r[2], y:r[3], idx:i, vis:false };
+  e.s.deg++; e.t.deg++;
+  const stateish = c => c==='wudai' || c==='shiguo' || c==='waibu';
+  if(stateish(e.s.c) && stateish(e.t.c)) e.rest = 190;
+  else if(e.s.c==='renwu' && e.t.c==='renwu') e.rest = 110;
+  else if(e.s.c==='shijian' || e.t.c==='shijian') e.rest = 130;
+  else e.rest = 140;
+  return e;
+});
+
+/* ==================== 相机 ==================== */
+const cam = { x:0, y:0, z:1 };
+let camT = null;
+const toScreen = n => ({ x:(n.x+cam.x)*cam.z + W/2, y:(n.y+cam.y)*cam.z + H/2 });
+const toWorld = (sx,sy) => ({ x:(sx-W/2)/cam.z - cam.x, y:(sy-H/2)/cam.z - cam.y });
+function zoomAt(px,py,f){
+  const wz = toWorld(px,py);
+  cam.z = clamp(cam.z*f, 0.25, 3.5);
+  cam.x = (px-W/2)/cam.z - wz.x;
+  cam.y = (py-H/2)/cam.z - wz.y;
+  camT = null;
+}
+function fit(all){
+  const list = all ? NODES : NODES.filter(n=>n.alpha>0.05);
+  if(!list.length) return;
+  let x1=1e9, y1=1e9, x2=-1e9, y2=-1e9;
+  for(const n of list){ x1=Math.min(x1,n.x); y1=Math.min(y1,n.y); x2=Math.max(x2,n.x); y2=Math.max(y2,n.y); }
+  cam.z = clamp(Math.min(W/Math.max(x2-x1,200), H/Math.max(y2-y1,200))*0.92, 0.25, 2.4);
+  cam.x = -(x1+x2)/2; cam.y = -(y1+y2)/2;
+  camT = null;
+}
+
+/* ==================== 时间轴 ==================== */
+const YMIN=878, YMAX=980;
+const SPEEDS=[260,130,65], SPEED_LABELS=['1×','2×','4×'];
+let year=907, playing=false, introStop=null, speedIdx=1, nextTick=0;
+const slider=$('#yearSlider'), yearLabel=$('#yearLabel'), playBtn=$('#playBtn'), speedBtn=$('#speedBtn');
+const hidden = new Set();
+function setYear(y){
+  year = clamp(Math.round(y), YMIN, YMAX);
+  slider.value = String(year);
+  yearLabel.textContent = String(year);
+}
+function syncPlayBtn(){ playBtn.textContent = playing ? '⏸ 暂停' : '▶ 播放'; }
+function togglePlay(){
+  if(year>=YMAX) setYear(YMIN);
+  playing = !playing;
+  if(playing) nextTick = 0;
+  syncPlayBtn();
+}
+playBtn.addEventListener('click', togglePlay);
+speedBtn.addEventListener('click', ()=>{
+  speedIdx = (speedIdx+1)%SPEEDS.length;
+  speedBtn.textContent = SPEED_LABELS[speedIdx];
+});
+slider.addEventListener('input', ()=>{
+  setYear(+slider.value);
+  playing = false; introStop = null; syncPlayBtn();
+});
+function computeVis(){
+  for(const n of NODES){
+    n.target = (year>=n.s && year<=n.e && !hidden.has(n.c)) ? 1 : 0;
+  }
+}
+
+/* ==================== 图例 ==================== */
+const legendEl = $('#legend');
+['wudai','shiguo','waibu','renwu','shijian'].forEach(c=>{
+  const meta = CAT[c];
+  const cnt = NODES.filter(n=>n.c===c).length;
+  const el = document.createElement('button');
+  el.className = 'lg';
+  el.dataset.c = c;
+  el.style.setProperty('--c', meta.color);
+  el.innerHTML = '<span class="dot" style="background:'+meta.color+'"></span>'+meta.name+'<span class="cnt">'+cnt+'</span>';
+  el.addEventListener('click', ()=>{
+    if(hidden.has(c)) hidden.delete(c); else hidden.add(c);
+    el.classList.toggle('off', hidden.has(c));
+  });
+  legendEl.appendChild(el);
+});
+
+/* ==================== 搜索 ==================== */
+const searchInput = $('#searchInput'), searchList = $('#searchList');
+function renderList(q){
+  const items = NODES.filter(n=>n.n.indexOf(q)>=0);
+  searchList.innerHTML = items.slice(0,8).map(n=>
+    '<div class="sitem" data-id="'+n.id+'">'+
+    '<span class="sdot" style="background:'+CAT[n.c].color+';box-shadow:0 0 8px '+CAT[n.c].color+'"></span>'+
+    '<span>'+n.n+'</span><span class="sy">'+(n.yrs||(n.s+'–'+n.e))+'</span></div>'
+  ).join('') || '<div class="sitem" style="cursor:default;color:#5c6485">没有找到相关节点</div>';
+  searchList.classList.add('show');
+}
+searchInput.addEventListener('input', ()=>renderList(searchInput.value.trim()));
+searchInput.addEventListener('focus', ()=>renderList(searchInput.value.trim()));
+searchInput.addEventListener('blur', ()=>setTimeout(()=>searchList.classList.remove('show'), 160));
+searchList.addEventListener('click', e=>{
+  const it = e.target.closest('.sitem');
+  if(!it || !it.dataset.id) return;
+  choose(nodeMap[it.dataset.id]);
+});
+function choose(n){
+  if(hidden.has(n.c)){ hidden.delete(n.c); syncLegend(); }
+  setYear(clamp(year, n.s, n.e));
+  searchList.classList.remove('show');
+  searchInput.blur();
+  select(n);
+}
+function syncLegend(){
+  document.querySelectorAll('.lg').forEach(el=>{
+    el.classList.toggle('off', hidden.has(el.dataset.c));
+  });
+}
+
+/* ==================== 详情面板 ==================== */
+const panel = $('#panel'), panelBody = $('#panelBody');
+function relChips(n){
+  const arr = EDGES.filter(e=>e.s===n||e.t===n).sort((a,b)=>a.y-b.y);
+  return arr.slice(0,14).map(e=>{
+    const other = e.s===n ? e.t : e.s;
+    const label = e.s===n ? (e.k+' '+other.n) : (other.n+' '+e.k);
+    return '<span class="chip">'+label+'</span>';
+  }).join('');
+}
+function openPanel(n){
+  const meta = CAT[n.c];
+  let kv = '';
+  if(n.yrs) kv += '<div class="k">时间</div><div class="v">'+n.yrs+'</div>';
+  if(n.founder) kv += '<div class="k">建立者</div><div class="v">'+n.founder+'</div>';
+  if(n.city) kv += '<div class="k">都城</div><div class="v">'+n.city+'</div>';
+  if(n.role) kv += '<div class="k">标签</div><div class="v">'+n.role+'</div>';
+  panelBody.innerHTML =
+    '<div class="chips"><span class="chip cat" style="--c:'+meta.color+'">'+meta.name+'</span>'+
+    '<span class="chip">'+(n.yrs||(n.s+'–'+n.e))+'</span></div>'+
+    '<div class="pname">'+n.n+'</div>'+
+    '<div class="ptag">'+n.t+'</div>'+
+    '<div class="kv">'+kv+'</div>'+
+    '<p class="pdesc">'+n.d+'</p>'+
+    '<div class="prel-title">关联关系</div><div class="prel">'+relChips(n)+'</div>';
+  panel.classList.add('open');
+}
+$('#panelClose').addEventListener('click', closePanel);
+function closePanel(){ panel.classList.remove('open'); sel = null; }
+function select(n){
+  sel = n;
+  openPanel(n);
+  const zt = Math.max(cam.z, 1.15);
+  camT = { x:(-0.18*W)/zt - n.x, y:(-0.08*H)/zt - n.y, z:zt };
+}
+let sel = null;
+
+/* ==================== 名言轮播 ==================== */
+const QUOTES = [
+  ['天子宁有种耶？兵强马壮者为之耳。','安重荣 · 五代武将'],
+  ['问君能有几多愁？恰似一江春水向东流。','李煜 · 南唐后主'],
+  ['卧榻之侧，岂容他人鼾睡乎？','赵匡胤 · 宋太祖'],
+  ['十年开拓天下，十年养百姓，十年致太平。','柴荣 · 后周世宗'],
+  ['历仕四朝十帝，五代最强打工人。','冯道 · 五代不倒翁'],
+  ['70年间，14个政权轮番上线，谁还不是个乱世主角？','知识图谱 · 小彩蛋']
+];
+const quoteEl = $('#quote'), quoteText = $('#quoteText'), quoteBy = $('#quoteBy');
+let qi = 0;
+function rotateQuote(){
+  quoteEl.classList.remove('show');
+  setTimeout(()=>{
+    const q = QUOTES[qi % QUOTES.length]; qi++;
+    quoteText.textContent = q[0]; quoteBy.textContent = '—— '+q[1];
+    quoteEl.classList.add('show');
+  }, 900);
+}
+setInterval(rotateQuote, 9000);
+setTimeout(rotateQuote, 2200);
+
+/* ==================== 交互 ==================== */
+let hover = null, dragging = null, panning = null, moved = false, downX = 0, downY = 0;
+function hit(x,y){
+  let best = null, bd = 1e9;
+  for(const n of NODES){
+    if(n.alpha < 0.2) continue;
+    const p = toScreen(n);
+    const r = (CAT[n.c].r + Math.min(7, Math.sqrt(n.deg)*1.4)) * cam.z + 10;
+    const d = Math.hypot(p.x-x, p.y-y);
+    if(d < r && d < bd){ bd = d; best = n; }
+  }
+  return best;
+}
+canvas.addEventListener('pointerdown', e=>{
+  const h = hit(e.clientX, e.clientY);
+  moved = false; downX = e.clientX; downY = e.clientY;
+  if(h){ dragging = h; canvas.classList.add('grabbing'); }
+  else { panning = { x:e.clientX, y:e.clientY, cx:cam.x, cy:cam.y }; }
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e=>{
+  if(dragging){
+    if(Math.hypot(e.clientX-downX, e.clientY-downY) > 4) moved = true;
+    const w = toWorld(e.clientX, e.clientY);
+    dragging.x = w.x; dragging.y = w.y; dragging.vx = 0; dragging.vy = 0;
+    simAlpha = Math.max(simAlpha, 0.4);
+    camT = null;
+  } else if(panning){
+    if(Math.hypot(e.clientX-downX, e.clientY-downY) > 4) moved = true;
+    cam.x = panning.cx + (e.clientX-panning.x)/cam.z;
+    cam.y = panning.cy + (e.clientY-panning.y)/cam.z;
+    camT = null;
+  } else {
+    hover = hit(e.clientX, e.clientY);
+    canvas.style.cursor = hover ? 'pointer' : 'grab';
+  }
+});
+canvas.addEventListener('pointerup', e=>{
+  if(dragging && !moved) select(dragging);
+  else if(panning && !moved){ closePanel(); }
+  dragging = null; panning = null;
+  canvas.classList.remove('grabbing');
+});
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, e.deltaY<0 ? 1.12 : 1/1.12);
+}, { passive:false });
+$('#zoomIn').addEventListener('click', ()=>zoomAt(W/2, H/2, 1.25));
+$('#zoomOut').addEventListener('click', ()=>zoomAt(W/2, H/2, 0.8));
+$('#fitBtn').addEventListener('click', ()=>fit(false));
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape') closePanel();
+  if(e.code === 'Space' && !/INPUT|TEXTAREA/.test(document.activeElement ? document.activeElement.tagName : '')){
+    e.preventDefault(); togglePlay();
+  }
+});
+
+/* ==================== 物理引擎 ==================== */
+let simAlpha = 1;
+const ripples = [];
+function stepPhysics(dt){
+  const dt16 = clamp(dt/16.667, 0.25, 2.5);
+  const act = NODES.filter(n=>n.alpha > 0.01);
+  const damp = Math.pow(0.87, dt16);
+  const F = 0.06 + 0.94*simAlpha;
+  simAlpha = Math.max(0.012, simAlpha*Math.pow(0.995, dt16));
+  /* 斥力 + 碰撞分离 */
+  for(let i=0;i<act.length;i++){
+    const a = act[i];
+    for(let j=i+1;j<act.length;j++){
+      const b = act[j];
+      let dx = b.x-a.x, dy = b.y-a.y;
+      let d = Math.hypot(dx,dy);
+      if(d < 0.01){ d = 0.01; dx = Math.random()-0.5; dy = Math.random()-0.5; }
+      const ux = dx/d, uy = dy/d;
+      const ra = CAT[a.c].r, rb = CAT[b.c].r;
+      let f = 0;
+      if(d < 320) f += 2600/(d*d+300) * (0.25 + 0.75*(ra+rb)/50) * F;
+      const rr = ra + rb + 26;
+      if(d < rr) f += (rr-d)*0.05*F;
+      if(f > 0){
+        const fx = ux*f, fy = uy*f;
+        a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+      }
+    }
+  }
+  /* 边弹簧 */
+  for(const e of EDGES){
+    if(!e.vis) continue;
+    const a = e.s, b = e.t;
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const d = Math.hypot(dx,dy) || 0.01;
+    const ux = dx/d, uy = dy/d;
+    let f = (d - e.rest) * 0.0022 * F;
+    f = clamp(f, -1.4, 1.4);
+    a.vx += ux*f; a.vy += uy*f; b.vx -= ux*f; b.vy -= uy*f;
+  }
+  /* 归属地锚点（拖拽中的节点除外） */
+  for(const n of act){
+    if(n === dragging) continue;
+    n.vx += (n.hx-n.x)*0.0035*F;
+    n.vy += (n.hy-n.y)*0.0035*F;
+  }
+  /* 积分 */
+  for(const n of act){
+    const v = Math.hypot(n.vx, n.vy);
+    const maxV = 6*F;
+    if(v > maxV){ n.vx *= maxV/v; n.vy *= maxV/v; }
+    n.x += n.vx*dt16; n.y += n.vy*dt16;
+  }
+}
+function computeEdgeVis(){
+  for(const e of EDGES){
+    e.vis = e.s.alpha > 0.03 && e.t.alpha > 0.03 && e.y <= year;
+  }
+}
+
+/* ==================== 渲染 ==================== */
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+const NEBULA = [
+  { fx:0.18, fy:0.16, r:0.55, c:'124,58,237',  a:0.10, ph:0 },
+  { fx:0.84, fy:0.78, r:0.62, c:'6,182,212',   a:0.08, ph:2.1 },
+  { fx:0.62, fy:0.30, r:0.48, c:'244,114,182', a:0.05, ph:4.2 }
+];
+let shoot = { t0:0, next:3500, x:0, y:0, vx:0, vy:0 };
+function drawBackground(now){
+  const t = now/1000;
+  ctx.fillStyle = '#05070f';
+  ctx.fillRect(0,0,W,H);
+  /* 星云 */
+  ctx.globalCompositeOperation = 'lighter';
+  for(const nb of NEBULA){
+    const cx = W*nb.fx + Math.sin(t*0.05+nb.ph)*50;
+    const cy = H*nb.fy + Math.cos(t*0.04+nb.ph)*40;
+    const R = Math.min(W,H)*nb.r;
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0, 'rgba('+nb.c+','+nb.a+')');
+    g.addColorStop(1, 'rgba('+nb.c+',0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx-R,cy-R,R*2,R*2);
+  }
+  /* 网格（视差） */
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(99,116,255,0.05)';
+  ctx.lineWidth = 1;
+  const step = 90*cam.z;
+  const offX = mod(cam.x*0.3*cam.z, step), offY = mod(cam.y*0.3*cam.z, step);
+  ctx.beginPath();
+  for(let x=-offX; x<=W; x+=step){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+  for(let y=-offY; y<=H; y+=step){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+  ctx.stroke();
+  /* 星星 */
+  ctx.globalCompositeOperation = 'lighter';
+  for(const s of stars){
+    const a = 0.10 + 0.45*Math.abs(Math.sin(t*s.sp*800 + s.ph));
+    ctx.fillStyle = 'rgba(200,215,255,'+a.toFixed(3)+')';
+    ctx.fillRect(s.x, s.y, s.r, s.r);
+  }
+  /* 流星 */
+  if(now > shoot.next){
+    shoot = {
+      t0: now,
+      next: now + 7000 + Math.random()*6000,
+      x: W*(0.55+Math.random()*0.45), y: H*(0.05+Math.random()*0.3),
+      vx: -(320+Math.random()*260), vy: 150+Math.random()*130
+    };
+  }
+  if(now - shoot.t0 < 900){
+    const age = (now-shoot.t0)/900;
+    const px = shoot.x + shoot.vx*age, py = shoot.y + shoot.vy*age;
+    const g = ctx.createLinearGradient(px,py, px-shoot.vx*0.14, py-shoot.vy*0.14);
+    g.addColorStop(0, 'rgba(255,255,255,'+(0.8*(1-age)).toFixed(3)+')');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px-shoot.vx*0.14, py-shoot.vy*0.14); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+function drawEdges(now){
+  const t = now/1000;
+  for(const e of EDGES){
+    if(!e.vis) continue;
+    const a = e.s, b = e.t;
+    const pa = toScreen(a), pb = toScreen(b);
+    const c1 = CAT[a.c].color, c2 = CAT[b.c].color;
+    const hl = hover && (e.s===hover || e.t===hover);
+    const grad = ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+    grad.addColorStop(0, rgba(c1, hl?0.9:0.26));
+    grad.addColorStop(1, rgba(c2, hl?0.9:0.26));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = hl ? 2.2 : 1;
+    ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
+    /* 流动光点 */
+    const ph = mod(t*0.002*(0.6+hash(e.idx*7.3)) + hash(e.idx*3.1), 1);
+    const px = lerp(pa.x,pb.x,ph), py = lerp(pa.y,pb.y,ph);
+    ctx.globalCompositeOperation = 'lighter';
+    const g2 = ctx.createRadialGradient(px,py,0,px,py,6);
+    g2.addColorStop(0, rgba(c2, 0.95)); g2.addColorStop(1, rgba(c2, 0));
+    ctx.fillStyle = g2;
+    ctx.beginPath(); ctx.arc(px,py,6,0,6.283); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    /* 悬浮时显示关系标签 */
+    if(hl){
+      const label = e.k+' '+b.n;
+      ctx.font = '600 11.5px "PingFang SC","Microsoft YaHei",sans-serif';
+      const w = ctx.measureText(label).width + 16;
+      const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
+      rr(mx-w/2, my-11, w, 22, 11);
+      ctx.fillStyle = 'rgba(8,11,22,0.92)';
+      ctx.fill();
+      ctx.strokeStyle = rgba(c2, 0.55); ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#e8ecff';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, mx, my+1);
+    }
+  }
+}
+function drawNodes(now){
+  const t = now/1000;
+  for(const n of NODES){
+    if(n.alpha <= 0.01) continue;
+    const p = toScreen(n);
+    const base = CAT[n.c].r + Math.min(7, Math.sqrt(n.deg)*1.3);
+    const R = base*cam.z;
+    const pul = 1 + 0.05*Math.sin(t*2.2 + n.pulse*6.28);
+    const rrN = R*pul;
+    const col = CAT[n.c].color;
+    const a = n.alpha;
+    const isHl = (n===hover || n===sel);
+    /* 外发光 */
+    ctx.globalCompositeOperation = 'lighter';
+    const g1 = ctx.createRadialGradient(p.x,p.y,rrN*0.3,p.x,p.y,rrN*2.7);
+    g1.addColorStop(0, rgba(col, 0.30*a));
+    g1.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = g1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,rrN*2.7,0,6.283); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    /* 主体 */
+    ctx.beginPath(); ctx.arc(p.x,p.y,rrN,0,6.283);
+    ctx.fillStyle = '#0b1020'; ctx.fill();
+    const g2 = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,rrN);
+    g2.addColorStop(0, rgba(col, 0.42*a));
+    g2.addColorStop(1, rgba(col, 0.05*a));
+    ctx.fillStyle = g2; ctx.fill();
+    /* 环 */
+    ctx.strokeStyle = rgba(col, 0.95*a);
+    ctx.lineWidth = isHl ? 2.2 : 1.4;
+    ctx.beginPath(); ctx.arc(p.x,p.y,rrN,0,6.283); ctx.stroke();
+    ctx.strokeStyle = rgba(col, 0.35*a);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,rrN*0.62,0,6.283); ctx.stroke();
+    /* 核心亮点 */
+    ctx.fillStyle = rgba('#ffffff', 0.9*a);
+    ctx.beginPath(); ctx.arc(p.x,p.y,rrN*0.16,0,6.283); ctx.fill();
+    /* 悬浮/选中：旋转虚线环 */
+    if(isHl){
+      ctx.setLineDash([7,9]);
+      ctx.lineDashOffset = -now/40;
+      ctx.strokeStyle = rgba(col, (n===sel?0.95:0.6)*a);
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(p.x,p.y,rrN+7,0,6.283); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    /* 名称 */
+    let showLabel = false;
+    if(n.c==='wudai' || n.c==='shiguo' || n.c==='waibu') showLabel = cam.z > 0.34;
+    else showLabel = isHl || cam.z > 1.35;
+    if(showLabel){
+      const fs = clamp(base*cam.z*0.62, 10.5, 17);
+      ctx.font = '600 '+fs.toFixed(1)+'px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = col; ctx.shadowBlur = 10;
+      ctx.fillStyle = '#eaf0ff';
+      ctx.fillText(n.n, p.x, p.y + rrN + 12);
+      ctx.shadowBlur = 0;
+    }
+  }
+}
+function drawRipples(now){
+  for(let i=ripples.length-1;i>=0;i--){
+    const r = ripples[i];
+    const age = (now - r.t0)/750;
+    if(age >= 1){ ripples.splice(i,1); continue; }
+    const p = { x:(r.x+cam.x)*cam.z + W/2, y:(r.y+cam.y)*cam.z + H/2 };
+    const rad = (12 + 46*age) * cam.z;
+    ctx.strokeStyle = rgba(r.c, (1-age)*0.85);
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, 6.283); ctx.stroke();
+  }
+}
+
+/* ==================== 主循环 ==================== */
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min(50, now - last);
+  last = now;
+  /* 自动播放 */
+  if(playing && now >= nextTick){
+    nextTick = now + SPEEDS[speedIdx];
+    setYear(year+1);
+    if(introStop !== null && year >= introStop){ playing = false; introStop = null; syncPlayBtn(); }
+    if(year >= YMAX){ playing = false; syncPlayBtn(); }
+  }
+  /* 可见性与淡入淡出 */
+  computeVis();
+  for(const n of NODES){
+    n.alpha += (n.target - n.alpha)*0.08;
+    if(n.target === 1 && n.prevT !== 1){
+      ripples.push({ x:n.x, y:n.y, c:CAT[n.c].color, t0:now });
+    }
+    n.prevT = n.target;
+  }
+  computeEdgeVis();
+  stepPhysics(dt);
+  /* 相机动画 */
+  if(camT){
+    cam.x = lerp(cam.x, camT.x, 0.12);
+    cam.y = lerp(cam.y, camT.y, 0.12);
+    cam.z = lerp(cam.z, camT.z, 0.12);
+    if(Math.abs(cam.x-camT.x)<1 && Math.abs(cam.y-camT.y)<1 && Math.abs(cam.z-camT.z)<0.01) camT = null;
+  }
+  /* 渲染 */
+  drawBackground(now);
+  drawEdges(now);
+  drawNodes(now);
+  drawRipples(now);
+}
+
+/* ==================== 启动 ==================== */
+let last = performance.now();
+fit(true);
+setYear(YMIN);
+playing = true; introStop = 907; speedIdx = 2;
+speedBtn.textContent = SPEED_LABELS[speedIdx];
+syncPlayBtn();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
