@@ -8,6 +8,10 @@
 
 > 907 — 979 · 你方唱罢我登场 · 一部乱世生存指南
 
+## 🎬 在线体验（不用下载，点开即玩）
+
+[🌐 https://TimeDetective.github.io/wudai-shiguo-graph/](https://TimeDetective.github.io/wudai-shiguo-graph/)
+
 ## ✨ 特性
 
 - 🎨 **赛博国风视觉**：深空星云、流星、视差网格、节点呼吸光晕、关系边能量流动粒子
